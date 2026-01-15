@@ -1,0 +1,20 @@
+\U0001f504 Smart Cache: Fetching delta for NQ since 2026-01-02 21:00:00...
+Smart Update failed: Invalid comparison between dtype=datetime64[ns, UTC] and Timestamp. Falling back to full download.
+\u2b07\ufe0f Full Download NQ from 2024-01-15 14:16:02.604987 to 2026-01-04 14:16:02.604987...
+Downloaded 11256 candles
+Loaded 862 candles.
+Calculating features with pandas_ta...
+Removed 199 rows with NaN values
+Created 40 features
+Model loaded from ml/models/xgboost_model.pkl
+Verifying ML Precision (Last 60 Days)...
+
+Total Trades (ML Filtered): 0
+Win Rate: 0.0%
+Traceback (most recent call last):
+  File "D:\Google\.gemini\antigravity\scratch\NQ-AI-Alerts\backend\verify_ml_precision.py", line 47, in <module>
+    verify_ml_precision()
+  File "D:\Google\.gemini\antigravity\scratch\NQ-AI-Alerts\backend\verify_ml_precision.py", line 40, in verify_ml_precision
+    print(f"Net Profit: {bt.total_pnl:.2f} pts")
+                         ^^^^^^^^^^^^
+AttributeError: 'Backtester' object has no attribute 'total_pnl'

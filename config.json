@@ -1,0 +1,10 @@
+{
+    "alert_threshold": 70,
+    "autonomous_enabled": true,
+    "symbols": [
+        "NQ",
+        "ES"
+    ],
+    "risk_per_trade": 0.01,
+    "adx_threshold": 25
+}

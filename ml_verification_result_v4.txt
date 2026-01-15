@@ -1,0 +1,28 @@
+\U0001f504 Smart Cache: Fetching delta for NQ since 2026-01-02 21:00:00...
+Smart Update failed: Invalid comparison between dtype=datetime64[ns, UTC] and Timestamp. Falling back to full download.
+\u2b07\ufe0f Full Download NQ from 2024-01-15 14:16:44.859079 to 2026-01-04 14:16:44.859079...
+Downloaded 11256 candles
+Loaded 862 candles.
+Calculating features with pandas_ta...
+Removed 199 rows with NaN values
+Created 40 features
+Model loaded from ml/models/xgboost_model.pkl
+Verifying ML Precision (Last 60 Days)...
+
+Total Trades (ML Filtered): 12
+Win Rate: 16.7%
+Net Profit: -619.06 pts
+
+TRADE LOG:
+2025-11-21 17:00:00+00:00 | SHORT | PnL: -274.50 | Conf: N/A
+2025-12-01 06:00:00+00:00 | LONG | PnL: 303.35 | Conf: N/A
+2025-12-09 01:00:00+00:00 | LONG | PnL: -102.29 | Conf: N/A
+2025-12-10 00:00:00+00:00 | LONG | PnL: -76.69 | Conf: N/A
+2025-12-11 00:00:00+00:00 | LONG | PnL: -138.94 | Conf: N/A
+2025-12-12 09:00:00+00:00 | LONG | PnL: -94.10 | Conf: N/A
+2025-12-15 13:00:00+00:00 | SHORT | PnL: 181.29 | Conf: N/A
+2025-12-19 01:00:00+00:00 | SHORT | PnL: -164.28 | Conf: N/A
+2025-12-23 06:00:00+00:00 | LONG | PnL: -45.24 | Conf: N/A
+2025-12-29 01:00:00+00:00 | LONG | PnL: -61.90 | Conf: N/A
+2025-12-29 09:00:00+00:00 | LONG | PnL: -55.04 | Conf: N/A
+2025-12-30 00:00:00+00:00 | LONG | PnL: -90.72 | Conf: N/A

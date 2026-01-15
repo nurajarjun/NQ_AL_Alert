@@ -1,0 +1,97 @@
+# .gitignore for NQ AI Alert System
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# Environment Variables (IMPORTANT - Never commit!)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Data & Cache
+backend/data/cache/
+backend/data/*.csv
+*.pkl
+*.pickle
+
+# Models (optional - can commit or ignore)
+# backend/ml/models/*.pkl
+# backend/ml/models/*.json
+
+# Reports (optional - usually ignore)
+backend/reports/daily_report_*.md
+backend/reports/trades.json
+
+# Backtest Results
+backtest_results.csv
+backtest_*.csv
+
+# Docker
+.dockerignore
+
+# Temporary files
+*.tmp
+*.temp
+debug_*.txt
+debug_*.csv
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Coverage
+.coverage
+htmlcov/
+
+# Testing
+.pytest_cache/
+.tox/
+
+# Documentation builds
+docs/_build/
+
+# Secrets (CRITICAL)
+secrets/
+*.key
+*.pem
+ssh-key-*.key

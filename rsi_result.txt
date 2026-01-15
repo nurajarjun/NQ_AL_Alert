@@ -1,0 +1,15 @@
+\U0001f504 Smart Cache: Fetching delta for NQ since 2026-01-02 21:00:00...
+Smart Update failed: Invalid comparison between dtype=datetime64[ns, UTC] and Timestamp. Falling back to full download.
+\u2b07\ufe0f Full Download NQ from 2024-01-15 13:59:45.538787 to 2026-01-04 13:59:45.538787...
+Downloaded 11256 candles
+Loaded 392 candles.
+Calculating features with pandas_ta...
+Removed 199 rows with NaN values
+Created 40 features
+Verifying RSI Tweak (Last 30 Days)...
+
+TRADE LOG (RSI 70/30 Filtered):
+2025-12-23 06:00:00+00:00 | LONG | PnL: -45.24
+2025-12-29 01:00:00+00:00 | LONG | PnL: -61.90
+2025-12-29 09:00:00+00:00 | LONG | PnL: -55.04
+2025-12-29 14:00:00+00:00 | LONG | PnL: -77.30

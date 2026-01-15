@@ -1,0 +1,126 @@
+//@version=5
+strategy("NQ AI Alert System - Multi-Symbol", overlay=true, pyramiding=0, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// ==========================================
+// INPUTS
+// ==========================================
+// Webhook URL - REPLACE WITH YOUR DEPLOYED URL!
+webhookUrl = input.string("https://your-app.onrender.com/webhook/tradingview", "Webhook URL", group="Webhook")
+
+// Symbol Selection
+symbolChoice = input.string("NQ", "Symbol", options=["NQ", "TQQQ", "SQQQ", "SOXL", "SOXS"], group="Symbol")
+
+// Indicator Settings
+rsiLength = input.int(14, "RSI Length", minval=1, group="Indicators")
+rsiOverbought = input.int(70, "RSI Overbought", minval=50, maxval=100, group="Indicators")
+rsiOversold = input.int(30, "RSI Oversold", minval=0, maxval=50, group="Indicators")
+atrLength = input.int(14, "ATR Length", minval=1, group="Indicators")
+atrMultiplier = input.float(2.0, "ATR Multiplier (Stop)", minval=0.5, maxval=5.0, step=0.1, group="Indicators")
+targetMultiplier1 = input.float(2.0, "Target 1 Multiplier", minval=1.0, maxval=10.0, step=0.5, group="Indicators")
+targetMultiplier2 = input.float(4.0, "Target 2 Multiplier", minval=2.0, maxval=20.0, step=0.5, group="Indicators")
+
+// Moving Average Settings
+emaFast = input.int(20, "Fast EMA", minval=1, group="Moving Averages")
+emaSlow = input.int(50, "Slow EMA", minval=1, group="Moving Averages")
+
+// Alert Settings
+sendWebhook = input.bool(true, "Send Webhook Alerts", group="Alerts")
+
+// ==========================================
+// INDICATORS
+// ==========================================
+rsi = ta.rsi(close, rsiLength)
+atr = ta.atr(atrLength)
+volumeRatio = volume / ta.sma(volume, 20)
+
+// Moving Averages
+ema20 = ta.ema(close, emaFast)
+ema50 = ta.ema(close, emaSlow)
+
+// Trend Detection
+uptrend = ema20 > ema50
+downtrend = ema20 < ema50
+
+// ==========================================
+// LONG ENTRY CONDITIONS
+// ==========================================
+longCondition = false
+if uptrend
+    // EMA Crossover + RSI not overbought
+    if ta.crossover(ema20, ema50) and rsi < rsiOverbought
+        longCondition := true
+    // Pullback to EMA20 in uptrend
+    else if ta.crossover(close, ema20) and rsi < 60
+        longCondition := true
+
+// ==========================================
+// SHORT ENTRY CONDITIONS
+// ==========================================
+shortCondition = false
+if downtrend
+    // EMA Crossunder + RSI not oversold
+    if ta.crossunder(ema20, ema50) and rsi > rsiOversold
+        shortCondition := true
+    // Bounce to EMA20 in downtrend
+    else if ta.crossunder(close, ema20) and rsi > 40
+        shortCondition := true
+
+// ==========================================
+// CALCULATE LEVELS
+// ==========================================
+var float longEntry = na
+var float longStop = na
+var float longTarget1 = na
+var float longTarget2 = na
+
+var float shortEntry = na
+var float shortStop = na
+var float shortTarget1 = na
+var float shortTarget2 = na
+
+if longCondition
+    longEntry := close
+    longStop := longEntry - (atr * atrMultiplier)
+    longTarget1 := longEntry + (atr * atrMultiplier * targetMultiplier1)
+    longTarget2 := longEntry + (atr * atrMultiplier * targetMultiplier2)
+
+if shortCondition
+    shortEntry := close
+    shortStop := shortEntry + (atr * atrMultiplier)
+    shortTarget1 := shortEntry - (atr * atrMultiplier * targetMultiplier1)
+    shortTarget2 := shortEntry - (atr * atrMultiplier * targetMultiplier2)
+
+// ==========================================
+// EXECUTE TRADES
+// ==========================================
+if longCondition
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Exit Long", "Long", stop=longStop, limit=longTarget1)
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Exit Short", "Short", stop=shortStop, limit=shortTarget1)
+
+// ==========================================
+// WEBHOOK ALERTS
+// ==========================================
+if longCondition and sendWebhook
+    alertMessage = '{"symbol":"' + symbolChoice + '", "direction":"LONG", "entry":' + str.tostring(longEntry) + ', "stop":' + str.tostring(longStop) + ', "target1":' + str.tostring(longTarget1) + ', "target2":' + str.tostring(longTarget2) + ', "rsi":' + str.tostring(rsi) + ', "atr":' + str.tostring(atr) + ', "volume_ratio":' + str.tostring(volumeRatio) + '}'
+    alert(alertMessage, alert.freq_once_per_bar_close)
+
+if shortCondition and sendWebhook
+    alertMessage = '{"symbol":"' + symbolChoice + '", "direction":"SHORT", "entry":' + str.tostring(shortEntry) + ', "stop":' + str.tostring(shortStop) + ', "target1":' + str.tostring(shortTarget1) + ', "target2":' + str.tostring(shortTarget2) + ', "rsi":' + str.tostring(rsi) + ', "atr":' + str.tostring(atr) + ', "volume_ratio":' + str.tostring(volumeRatio) + '}'
+    alert(alertMessage, alert.freq_once_per_bar_close)
+
+// ==========================================
+// PLOTTING
+// ==========================================
+plot(ema20, "EMA 20", color=color.blue, linewidth=2)
+plot(ema50, "EMA 50", color=color.red, linewidth=2)
+
+// Plot entry levels
+plotshape(longCondition, "Long Signal", shape.triangleup, location.belowbar, color.green, size=size.small)
+plotshape(shortCondition, "Short Signal", shape.triangledown, location.abovebar, color.red, size=size.small)
+
+// Background color for trend
+bgcolor(uptrend ? color.new(color.green, 95) : downtrend ? color.new(color.red, 95) : na)

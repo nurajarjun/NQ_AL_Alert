@@ -1,0 +1,25 @@
+{
+    "date": "2026-01-14",
+    "regime": "Balanced",
+    "bias": "NEUTRAL",
+    "sentiment": "Market is in a balanced state. Monitor for breakout or breakdown from current range.",
+    "key_levels": {
+        "magnet": 21500,
+        "support": [
+            21400,
+            21300
+        ],
+        "resistance": [
+            21600,
+            21700
+        ]
+    },
+    "strategy": {
+        "focus": "Range Trading",
+        "notes": [
+            "Trade the range between support and resistance.",
+            "Wait for clear breakout confirmation before taking directional trades.",
+            "Use tight stops in this balanced environment."
+        ]
+    }
+}
