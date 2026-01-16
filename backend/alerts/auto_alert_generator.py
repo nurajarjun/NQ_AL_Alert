@@ -69,25 +69,29 @@ class AutoAlertGenerator:
             return None
     
     async def send_alert(self, symbol, setup_message):
-        """Send alert to Telegram"""
+        """Send alert to Telegram with enhanced deduplication"""
         try:
-            # Check if we sent an alert recently for this symbol
-            last_time = self.last_alert_time.get(symbol, 0)
+            # Create unique key: symbol + direction
+            signal_direction = "LONG" if "LONG" in setup_message else "SHORT" if "SHORT" in setup_message else "UNKNOWN"
+            alert_key = f"{symbol}_{signal_direction}"
+            
+            # Check if we sent this exact alert recently
+            last_time = self.last_alert_time.get(alert_key, 0)
             current_time = datetime.now().timestamp()
             
             if current_time - last_time < self.min_alert_gap:
-                logger.info(f"Skipping {symbol} - alert sent {int((current_time - last_time)/60)} min ago")
+                logger.info(f"⏭️ Skipping {alert_key} - alert sent {int((current_time - last_time)/60)} min ago")
                 return
             
             # Send alert
-            alert_header = f"🚨 AUTO ALERT - {symbol} SETUP DETECTED\n\n"
+            alert_header = f"🚨 AUTO ALERT - {symbol} {signal_direction}\n\n"
             full_message = alert_header + setup_message
             
             await self.telegram_bot.send_message(full_message)
             
-            # Update last alert time
-            self.last_alert_time[symbol] = current_time
-            logger.info(f"✅ Alert sent for {symbol}")
+            # Update last alert time for this specific signal
+            self.last_alert_time[alert_key] = current_time
+            logger.info(f"✅ Alert sent for {alert_key}")
             
         except Exception as e:
             logger.error(f"Error sending alert for {symbol}: {e}")
