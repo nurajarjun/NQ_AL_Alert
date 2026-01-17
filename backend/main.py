@@ -910,11 +910,24 @@ async def run_autonomous_loop():
                             # Only send if confident and in session
                             if sig.get('in_session', False):
                                 msg = f"🌙 **EVENING SCALP** | {sig['pair']}\n\n"
-                                msg += f"Strategy: {sig['strategy']}\n"
-                                msg += f"Signal: {sig['signal']}\n"
-                                msg += f"Price: {sig['price']:.2f}\n"
-                                msg += f"Conf: {sig['confidence']}\n"
-                                msg += f"Stats: ADX={sig['adx']:.1f} | RSI={sig['rsi']:.1f}"
+                                msg += f"📊 **{sig['strategy']}**\n"
+                                msg += f"Signal: **{sig['signal']}** | Conf: {sig['confidence']}\n\n"
+                                
+                                # Entry and Levels
+                                msg += f"💰 **Trade Setup:**\n"
+                                msg += f"Entry: {sig['entry']:.2f}\n"
+                                msg += f"Stop: {sig['stop']:.2f}\n"
+                                msg += f"Target 1: {sig['target1']:.2f} (R/R: {sig['rr_ratio1']}:1)\n"
+                                msg += f"Target 2: {sig['target2']:.2f} (R/R: {sig['rr_ratio2']}:1)\n\n"
+                                
+                                # Risk/Reward in Dollars
+                                msg += f"💵 **Risk/Reward:**\n"
+                                msg += f"Risk: ${sig['risk_dollars']:.0f}\n"
+                                msg += f"Reward 1: ${sig['reward1_dollars']:.0f}\n"
+                                msg += f"Reward 2: ${sig['reward2_dollars']:.0f}\n\n"
+                                
+                                # Technical Stats
+                                msg += f"📈 **Stats:** ADX={sig['adx']:.1f} | RSI={sig['rsi']:.1f}"
                                 
                                 if telegram_bot:
                                     await telegram_bot.send_alert(msg)
