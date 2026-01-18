@@ -1,0 +1,78 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    name: Deploy NQ-AI-Alerts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy to Oracle Cloud
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh ${ORACLE_USER}@${ORACLE_HOST} << 'EOF'
+            cd ~/NQ_AL_Alert
+            
+            echo "📥 Pulling latest code..."
+            git pull origin main
+            
+            echo "⚙️  Updating environment variables..."
+            cat > .env << 'ENVEOF'
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          NEWS_API_KEY=${{ secrets.NEWS_API_KEY }}
+          AUTONOMOUS_MODE=true
+          ALERT_THRESHOLD=70
+          LOG_LEVEL=INFO
+          PYTHONUNBUFFERED=1
+          ENVEOF
+            
+            echo "🔄 Restarting containers..."
+            docker-compose restart
+            
+            echo "⏳ Waiting for startup..."
+            sleep 15
+            
+            echo "🏥 Running health check..."
+            if curl -f http://localhost:8001/; then
+              echo "✅ Deployment successful!"
+            else
+              echo "❌ Health check failed!"
+              exit 1
+            fi
+          EOF
+      
+      - name: Notify Success
+        if: success()
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          curl -X POST "https://api.telegram.org/bot${{ secrets.DEPLOY_TELEGRAM_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.DEPLOY_TELEGRAM_CHAT }}" \
+            -d "parse_mode=Markdown" \
+            -d "text=✅ *NQ-AI-Alerts Deployed Successfully!*%0A%0A📝 Commit: ${COMMIT_MSG}%0A⏰ Time: $(date '+%Y-%m-%d %H:%M:%S')%0A🔗 [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+      
+      - name: Notify Failure
+        if: failure()
+        run: |
+          curl -X POST "https://api.telegram.org/bot${{ secrets.DEPLOY_TELEGRAM_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.DEPLOY_TELEGRAM_CHAT }}" \
+            -d "parse_mode=Markdown" \
+            -d "text=❌ *NQ-AI-Alerts Deployment FAILED!*%0A%0A🔗 [Check Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"

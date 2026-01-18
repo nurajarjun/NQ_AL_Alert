@@ -1,0 +1,74 @@
+name: Manual Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_tag:
+        description: 'Backup tag to rollback to (e.g., backup-20260117-190000)'
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    name: Rollback to Previous Version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Perform Rollback
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          BACKUP_TAG: ${{ github.event.inputs.backup_tag }}
+        run: |
+          ssh ${ORACLE_USER}@${ORACLE_HOST} << EOF
+            cd ~/NQ_AL_Alert
+            
+            echo "🔄 Rolling back to ${BACKUP_TAG}..."
+            
+            # Stop current version
+            docker-compose down
+            
+            # Restore backup
+            if docker images | grep -q "${BACKUP_TAG}"; then
+              docker tag nq-ai-alerts:${BACKUP_TAG} nq-ai-alerts:latest
+              echo "✅ Backup image restored"
+            else
+              echo "❌ Backup tag not found!"
+              exit 1
+            fi
+            
+            # Start
+            docker-compose up -d
+            
+            # Health check
+            sleep 15
+            if curl -f http://localhost:8001/; then
+              echo "✅ Rollback successful!"
+            else
+              echo "❌ Rollback failed!"
+              exit 1
+            fi
+          EOF
+      
+      - name: Notify Success
+        if: success()
+        run: |
+          curl -X POST "https://api.telegram.org/bot${{ secrets.DEPLOY_TELEGRAM_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.DEPLOY_TELEGRAM_CHAT }}" \
+            -d "parse_mode=Markdown" \
+            -d "text=🔄 *Rollback Successful!*%0A%0ARestored to: \`${{ github.event.inputs.backup_tag }}\`%0A⏰ $(date '+%H:%M:%S')"
+      
+      - name: Notify Failure
+        if: failure()
+        run: |
+          curl -X POST "https://api.telegram.org/bot${{ secrets.DEPLOY_TELEGRAM_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.DEPLOY_TELEGRAM_CHAT }}" \
+            -d "parse_mode=Markdown" \
+            -d "text=❌ *Rollback FAILED!*%0A%0ABackup tag: \`${{ github.event.inputs.backup_tag }}\`%0A🔗 [Check Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
