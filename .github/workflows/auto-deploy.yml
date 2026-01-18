@@ -62,7 +62,7 @@ jobs:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
         run: |
-          ssh ${ORACLE_USER}@${ORACLE_HOST} << 'EOF'
+          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=120 ${ORACLE_USER}@${ORACLE_HOST} << 'EOF'
             # Navigate to project
             cd ~/NQ_AL_Alert || {
               echo "Repository not found, cloning..."
@@ -71,8 +71,10 @@ jobs:
               cd NQ_AL_Alert
             }
             
-            # Pull latest code
+            # Discard any local changes and pull latest code
             echo "📥 Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
             git pull origin main
             
             # Update .env file
