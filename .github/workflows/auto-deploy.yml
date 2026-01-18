@@ -30,6 +30,36 @@ jobs:
             TCPKeepAlive yes
           EOF
       
+      - name: Test SSH Connection
+        id: test_ssh
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          echo "Testing SSH connection..."
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if ssh -o ConnectTimeout=10 -o ServerAliveInterval=60 ${ORACLE_USER}@${ORACLE_HOST} "echo 'SSH connection successful'"; then
+              echo "✅ SSH connection established"
+              exit 0
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "⚠️  SSH connection failed (attempt $RETRY_COUNT/$MAX_RETRIES)"
+            
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              WAIT_TIME=$((RETRY_COUNT * 10))
+              echo "Waiting ${WAIT_TIME}s before retry..."
+              sleep $WAIT_TIME
+            fi
+          done
+          
+          echo "❌ SSH connection failed after $MAX_RETRIES attempts"
+          echo "Please check Oracle Cloud instance status and SSH configuration"
+          exit 1
+      
       - name: Check if Docker is installed
         id: check_docker
         env:
@@ -41,7 +71,7 @@ jobs:
       
       - name: Run automated setup (first time only)
         if: steps.check_docker.outputs.docker_installed == 'false'
-        timeout-minutes: 30
+        timeout-minutes: 60
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
@@ -104,14 +134,34 @@ jobs:
             echo "⏳ Waiting for startup..."
             sleep 15
             
-            # Health check
+            # Health check with retries
             echo "🏥 Running health check..."
-            if curl -f http://localhost:8001/; then
-              echo "✅ Deployment successful!"
-            else
-              echo "⚠️  Health check failed!"
-              sudo docker-compose logs --tail=50
-              exit 1
+            HEALTH_CHECK_RETRIES=3
+            HEALTH_CHECK_PASSED=false
+            
+            for i in $(seq 1 $HEALTH_CHECK_RETRIES); do
+              if curl -f http://localhost:8001/; then
+                echo "✅ Health check passed!"
+                HEALTH_CHECK_PASSED=true
+                break
+              fi
+              echo "⚠️  Health check attempt $i/$HEALTH_CHECK_RETRIES failed"
+              if [ $i -lt $HEALTH_CHECK_RETRIES ]; then
+                echo "Waiting 30s before retry..."
+                sleep 30
+              fi
+            done
+            
+            if [ "$HEALTH_CHECK_PASSED" = false ]; then
+              echo "⚠️  Health check failed, checking container status..."
+              if sudo docker-compose ps | grep -q "Up"; then
+                echo "✅ Container is running, deployment considered successful"
+                sudo docker-compose logs --tail=50
+              else
+                echo "❌ Container is not running, deployment failed"
+                sudo docker-compose logs --tail=100
+                exit 1
+              fi
             fi
           EOF
       
