@@ -95,16 +95,35 @@ echo "✅ Docker build complete!"
 echo "🚀 Starting containers..."
 sudo docker-compose up -d
 
-# Wait for startup
-echo "⏳ Waiting for services to start..."
-sleep 20
+# Wait for startup (increased from 20 to 60 seconds)
+echo "⏳ Waiting for services to start (60 seconds)..."
+sleep 60
 
-# Health check
+# Health check with retries
 echo "🏥 Running health check..."
-if curl -f http://localhost:8001/; then
-    echo "✅ Health check passed!"
-else
-    echo "⚠️  Health check failed, but containers are running. Check logs with: docker-compose logs"
+MAX_RETRIES=5
+RETRY_COUNT=0
+HEALTH_CHECK_PASSED=false
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -f http://localhost:8001/; then
+        echo "✅ Health check passed!"
+        HEALTH_CHECK_PASSED=true
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            echo "⚠️  Health check failed (attempt $RETRY_COUNT/$MAX_RETRIES). Retrying in 10 seconds..."
+            sleep 10
+        fi
+    fi
+done
+
+if [ "$HEALTH_CHECK_PASSED" = false ]; then
+    echo "❌ Health check failed after $MAX_RETRIES attempts"
+    echo "📋 Container logs:"
+    sudo docker-compose logs --tail=50
+    echo "⚠️  Containers are running but not responding. Check logs above."
 fi
 
 echo ""
