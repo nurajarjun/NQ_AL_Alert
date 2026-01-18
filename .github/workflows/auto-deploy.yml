@@ -21,6 +21,14 @@ jobs:
           echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts
+          
+          # Configure SSH to keep connection alive
+          cat >> ~/.ssh/config << 'EOF'
+          Host *
+            ServerAliveInterval 60
+            ServerAliveCountMax 120
+            TCPKeepAlive yes
+          EOF
       
       - name: Check if Docker is installed
         id: check_docker
@@ -33,19 +41,19 @@ jobs:
       
       - name: Run automated setup (first time only)
         if: steps.check_docker.outputs.docker_installed == 'false'
+        timeout-minutes: 30
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
         run: |
           # Copy setup script to Oracle Cloud
-          scp setup-oracle.sh ${ORACLE_USER}@${ORACLE_HOST}:~/
+          scp -o ServerAliveInterval=60 setup-oracle.sh ${ORACLE_USER}@${ORACLE_HOST}:~/
           
-          # Run setup script
-          ssh ${ORACLE_USER}@${ORACLE_HOST} << 'EOF'
+          # Run setup script with keep-alive
+          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=120 ${ORACLE_USER}@${ORACLE_HOST} << 'EOF'
             chmod +x ~/setup-oracle.sh
             ~/setup-oracle.sh
             
-            # Logout and login to apply docker group
             echo "Setup complete. Docker group applied."
           EOF
       

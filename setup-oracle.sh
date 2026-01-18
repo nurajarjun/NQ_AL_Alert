@@ -70,9 +70,26 @@ else
     echo "✅ .env file already exists"
 fi
 
+# Build Docker image (this is the long part)
+echo "🏗️  Building Docker image (this may take 10-15 minutes)..."
+echo "📦 Installing Python libraries in background..."
+
+# Build in background and send keep-alive signals
+(
+  while true; do
+    echo "⏳ Still building... $(date +%H:%M:%S)"
+    sleep 60
+  done
+) &
+KEEPALIVE_PID=$!
+
 # Build Docker image
-echo "🏗️  Building Docker image..."
 sudo docker-compose build
+
+# Stop keep-alive
+kill $KEEPALIVE_PID 2>/dev/null || true
+
+echo "✅ Docker build complete!"
 
 # Start containers
 echo "🚀 Starting containers..."
@@ -80,7 +97,7 @@ sudo docker-compose up -d
 
 # Wait for startup
 echo "⏳ Waiting for services to start..."
-sleep 15
+sleep 20
 
 # Health check
 echo "🏥 Running health check..."
