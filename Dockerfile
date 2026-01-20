@@ -34,4 +34,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8001/ || exit 1
 
 # Run from project root (critical for imports)
-CMD ["python", "backend/main.py"]
+# Using simplified version for initial deployment
+CMD ["python", "backend/main_simple.py"]
