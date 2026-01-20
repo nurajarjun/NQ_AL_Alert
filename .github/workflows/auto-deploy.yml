@@ -20,7 +20,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts
+          
+          # Add Oracle host keys manually (ssh-keyscan fails due to firewall)
+          echo "${{ secrets.ORACLE_HOST }} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIwQWsRt1cC9w2dlTw3kyLI37/9TBBIcW5N8YOjQRD9X" >> ~/.ssh/known_hosts
+          echo "${{ secrets.ORACLE_HOST }} ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCyMVYxqqeR9jyLh8bqVnjNXCvZ4h6hc88yZyYqF7T28RCY/MAfFqB4ZCNpTJnvWP0OaVupxT4CE5pdzEgTq8cmw3FZZY5NwCWgQMfvL0hYz5+oE8e3RDM0qVWZ919HvGhFqMDBElGCC3qfOQ8/TdQeUEEC5rLVuWbptaTxtP5QtR08e9QVzMr+q4sYfgHfw/CwtZtUtuGZrccPZb3Ie1mJb1aQQJow3Pv2J6tg2UZ9uJYv0ew+YHOUJ7YYM8LmbiWNoHC6JPnZ0tZBsJTN7e/iNCyONEbAHbCYQc7ukR1syS0CU1isQ9FdJCIdeugmE/gBirf7GZMI5VbKbVEzAWggsbeeCxg1Vg6rWNuXA77p72afzZ+idMM0BY4qmBmH1UeWsCW+dLSczwzRtY+3zXAsfA2ijU1UtyPx3aqBWKTY2lidN3/D4TdhIv38oLQ4afkNk2K3DUbFGPZzoC1BHpr1Cfs2eJXkSe3Dt1Xf71ZCqOiCY/obJGYsPFMJtJU+xzM=" >> ~/.ssh/known_hosts
+          echo "${{ secrets.ORACLE_HOST }} ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBD2HRhdJVmQrgXBMh1+C+w4IWVW227DU2x8HQndA8seV4NOifTyw1vhnnRq9JyA4e+TledLIOMkOcr4E8CFTwGs=" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
           
           # Configure SSH to keep connection alive
           cat >> ~/.ssh/config << 'EOF'
